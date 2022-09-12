@@ -1,0 +1,27 @@
+name: Windows Build
+on: [workflow_dispatch]
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            cuda: "11.3.0"
+            compiler: "Visual Studio 16 2019"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: download CUDA
+        shell: pwsh
+        run: .\scripts\install_cuda.ps1
+
+      - name: check CUDA
+        shell: pwsh
+        run: |
+          nvcc -V
+          Write-Output "CUDA PATH: $($env:CUDA_PATH)"
+          ls $env:CUDA_PATH
+          ls $env:CUDA_PATH\bin
+          ls $env:CUDA_PATH\include
