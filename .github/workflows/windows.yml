@@ -6,22 +6,109 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-2022
-            cuda: "11.3.0"
+          - os: windows-2019
+            cuda: "11.3.1"
             compiler: "Visual Studio 16 2019"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-      - name: download CUDA
+      - uses: Jimver/cuda-toolkit@v0.2.8
+        id: cuda-toolkit
+        with:
+          method: 'network'
+          cuda: '11.3.1'
+          sub-packages: '["nvcc", "cupti", "cublas", "cublas_dev", "nvjpeg", "nvjpeg_dev", "npp", "npp_dev", "cufft", "cufft_dev", "nvrtc", "nvrtc_dev", "curand", "curand_dev", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "nvml_dev", "cudart", "visual_studio_integration", "thrust"]'
+
+      - name: install cudnn
         shell: pwsh
         run: .\scripts\install_cuda.ps1
 
-      - name: check CUDA
+      - name: install OpenCV and ninja
         shell: pwsh
         run: |
+          choco install opencv ninja
+          echo "OPENCV_DIR=c:\tools\opencv\build" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "c:\tools\opencv\build\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "c:\tools\opencv\build\x64\vc15\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: install OpenBlas
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://github.com/xianyi/OpenBLAS/releases/download/v0.3.21/OpenBLAS-0.3.21-x64.zip -OutFile OpenBLAS.zip | Out-Null
+          Expand-Archive -Path OpenBLAS.zip -DestinationPath "d:\utils\OpenBLAS"
+          echo "OpenBLAS_HOME=d:\utils\OpenBLAS" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      #- name: install MKL
+      #  shell: pwsh
+      #  run: |
+      #    Invoke-WebRequest https://registrationcenter-download.intel.com/akdlm/irc_nas/18723/w_onemkl_p_2022.1.0.192_offline.exe -OutFile setup.exe | Out-Null
+      #    Start-Process -Wait -FilePath .\setup.exe -ArgumentList "-s -a --silent --eula accept"
+
+      - name: check Env
+        shell: pwsh
+        run: |
+          Write-Output "---- NVCC Output ----"
           nvcc -V
+          Write-Output "---------------------"
           Write-Output "CUDA PATH: $($env:CUDA_PATH)"
-          ls $env:CUDA_PATH
-          ls $env:CUDA_PATH\bin
-          ls $env:CUDA_PATH\include
+          Write-Output "Path: $($env:Path)"
+          Write-Output "OpenCV: $($env:OPENCV_DIR)"
+          Write-Output "OpenBLAS: $($env:OpenBLAS)"
+
+      - name: Configure by CMake
+        id: configure
+        shell: pwsh
+        run: |
+          mkdir -p .\incubator-mxnet\build
+          cd .\incubator-mxnet\build
+          cmake -G "${{ matrix.compiler }}" -DCMAKE_BUILD_TYPE:STRING=Release -DCUDAToolkit_ROOT:PATH="$env:CUDA_PATH" -DMXNET_CUDA_ARCH:STRING="8.6" -A x64 ..
+
+      - name: CMake Configure Error Processing
+        if: ${{ (failure() && steps.configure.outcome == 'failure') || success() }}
+        working-directory: ${{ env.build_dir }}
+        shell: pwsh
+        run: |
+          pwd
+          echo "---- CMakeFiles/CMakeOutput.log"
+          cat .\incubator-mxnet\build\CMakeFiles\CMakeOutput.log
+          echo "----"
+          echo "---- CMakeFiles/CMakeError.log"
+          cat .\incubator-mxnet\build\CMakeFiles\CMakeError.log
+          echo "----"
+
+      - name: Build
+        id: build
+        shell: pwsh
+        run: |
+          cd .\incubator-mxnet\build
+          cmake --build . --config Release
+
+      - name: CMake Build Error Processing
+        if: ${{ (failure() && steps.build.outcome == 'failure') || success() }}
+        working-directory: ${{ env.build_dir }}
+        shell: pwsh
+        run: |
+          pwd
+          echo "---- CMakeFiles/CMakeOutput.log"
+          cat .\incubator-mxnet\build\CMakeFiles\CMakeOutput.log
+          echo "----"
+          echo "---- CMakeFiles/CMakeError.log"
+          cat .\incubator-mxnet\build\CMakeFiles\CMakeError.log
+          echo "----"
+
+      - name: Python wheel build
+        shell: pwsh
+        run: |
+          pip install wheel
+          cd .\incubator-mxnet
+          python .\python\setup.py bdist_wheel --plat-name win_amd64
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: mxnet-libraries
+          path: |
+            .\incubator-mxnet\dist
