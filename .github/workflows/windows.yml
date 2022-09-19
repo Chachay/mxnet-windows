@@ -20,7 +20,7 @@ jobs:
         with:
           method: 'network'
           cuda: '11.3.1'
-          sub-packages: '["nvcc", "cupti", "cublas", "cublas_dev", "nvjpeg", "nvjpeg_dev", "npp", "npp_dev", "cufft", "cufft_dev", "nvrtc", "nvrtc_dev", "curand", "curand_dev", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "nvml_dev", "cudart", "visual_studio_integration", "thrust"]'
+          sub-packages: '["nvcc", "cupti", "visual_profiler", "nvprof", "cublas", "cublas_dev", "nvjpeg", "nvjpeg_dev", "npp", "npp_dev", "cufft", "cufft_dev", "nvrtc", "nvrtc_dev", "curand", "curand_dev", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "nvml_dev", "cudart", "visual_studio_integration", "thrust"]'
 
       - name: install cudnn
         shell: pwsh
@@ -99,6 +99,13 @@ jobs:
           cat .\incubator-mxnet\build\CMakeFiles\CMakeError.log
           echo "----"
 
+      - name: Archive production artifacts build
+        uses: actions/upload-artifact@v3
+        with:
+          name: mxnet-libraries
+          path: |
+            .\incubator-mxnet\build
+
       - name: Python wheel build
         shell: pwsh
         run: |
@@ -106,7 +113,7 @@ jobs:
           cd .\incubator-mxnet
           python .\python\setup.py bdist_wheel --plat-name win_amd64
 
-      - name: Archive production artifacts
+      - name: Archive production artifacts wheel
         uses: actions/upload-artifact@v3
         with:
           name: mxnet-libraries
