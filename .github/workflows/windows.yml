@@ -26,15 +26,17 @@ jobs:
         shell: pwsh
         run: .\scripts\install_cuda.ps1
 
-      - name: install OpenCV and ninja
+      - name: install OpenCV
         shell: pwsh
         run: |
-          choco install opencv ninja
+          choco install opencv
           echo "OPENCV_DIR=c:\tools\opencv\build" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "c:\tools\opencv\build\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "c:\tools\opencv\build\x64\vc15\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          echo "c:\tools\ninja" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-  
+
+      - name: get latest CMake and ninja
+        # Using 'latest' branch, the most recent CMake and ninja are installed.
+        uses: lukka/get-cmake@latest
 
       - name: install OpenBlas
         shell: pwsh
