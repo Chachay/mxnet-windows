@@ -87,6 +87,8 @@ jobs:
         run: |
           cd .\incubator-mxnet\build
           cmake --build . --config Release
+          cd ..
+          Compress-Archive -Path .\build\ -DestinationPath libraries.zip
 
       - name: CMake Build Error Processing
         if: ${{ (failure() && steps.build.outcome == 'failure') || success() }}
@@ -106,7 +108,7 @@ jobs:
         with:
           name: mxnet-libraries
           path: |
-            .\incubator-mxnet\build
+            .\incubator-mxnet\libraries.zip
 
       - name: Python wheel build
         shell: pwsh
@@ -115,9 +117,9 @@ jobs:
           cd .\incubator-mxnet
           python .\python\setup.py bdist_wheel --plat-name win_amd64
 
-      - name: Archive production artifacts wheel
-        uses: actions/upload-artifact@v3
-        with:
-          name: mxnet-libraries
-          path: |
-            .\incubator-mxnet\dist
+      #- name: Archive production artifacts wheel
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: mxnet-libraries
+      #    path: |
+      #      .\incubator-mxnet\dist
