@@ -8,7 +8,7 @@ jobs:
         include:
           - os: windows-2019
             cuda: "11.3.1"
-            compiler: "Ninja"
+            compiler: "Visual Studio 16 2019"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -68,8 +68,6 @@ jobs:
         run: |
           mkdir -p .\incubator-mxnet\build
           cd .\incubator-mxnet\build
-          cmd /K '"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && pwsh.exe'
-          $CXXFLAGS='/FS /MD /O2 /Ob2'
           cmake -G "${{ matrix.compiler }}" `
                 -DCMAKE_CXX_COMPILER=cl `
                 -DCMAKE_C_COMPILER=cl `
@@ -81,10 +79,11 @@ jobs:
                 -DUSE_OPENCV=ON  `
                 -DUSE_OPENMP=ON `
                 -DUSE_LAPACK=ON `
+                -T host=x64 `
                 -DCMAKE_BUILD_TYPE:STRING=Release `
                 -DCUDAToolkit_ROOT:PATH="$env:CUDA_PATH" `
                 -DMXNET_CUDA_ARCH:STRING="8.6" `
-                ..
+                -A x64 ..
 
       - name: CMake Configure Error Processing
         if: ${{ (failure() && steps.configure.outcome == 'failure') || success() }}
@@ -104,7 +103,6 @@ jobs:
         shell: pwsh
         run: |
           cd .\incubator-mxnet\build
-          cmd /K '"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && pwsh.exe'
           cmake --build . --config Release
           cd ..
           Compress-Archive -Path .\build\ -DestinationPath libraries.zip
