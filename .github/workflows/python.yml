@@ -60,7 +60,7 @@ jobs:
           Write-Output "CUDA PATH: $($env:CUDA_PATH)"
           Write-Output "Path: $($env:Path)"
           Write-Output "OpenCV: $($env:OPENCV_DIR)"
-          Write-Output "OpenBLAS: $($env:OpenBLAS)"
+          Write-Output "OpenBLAS: $($env:OpenBLAS_HOME)"
 
       - name: Python build
         shell: pwsh
