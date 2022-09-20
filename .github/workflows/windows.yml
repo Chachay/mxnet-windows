@@ -70,19 +70,19 @@ jobs:
           cd .\incubator-mxnet\build
           cmd /K '"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && pwsh.exe'
           $CXXFLAGS='/FS /MD /O2 /Ob2'
-          cmake -G "${{ matrix.compiler }}"`
-                -DCMAKE_CXX_COMPILER=cl`
-                -DCMAKE_C_COMPILER=cl`
-                -DUSE_BLAS=open`
-                -DUSE_MKL_IF_AVAILABLE=OFF`
+          cmake -G "${{ matrix.compiler }}" `
+                -DCMAKE_CXX_COMPILER=cl `
+                -DCMAKE_C_COMPILER=cl `
+                -DUSE_BLAS=open `
+                -DUSE_MKL_IF_AVAILABLE=OFF `
                 -DUSE_CUDA=ON `
                 -DUSE_CUDNN=ON `
                 -DENABLE_CUDA_RTC=ON `
                 -DUSE_OPENCV=ON  `
                 -DUSE_OPENMP=ON `
                 -DUSE_LAPACK=ON `
-                -DCMAKE_BUILD_TYPE:STRING=Release`
-                -DCUDAToolkit_ROOT:PATH="$env:CUDA_PATH"`
+                -DCMAKE_BUILD_TYPE:STRING=Release `
+                -DCUDAToolkit_ROOT:PATH="$env:CUDA_PATH" `
                 -DMXNET_CUDA_ARCH:STRING="8.6" `
                 ..
 
