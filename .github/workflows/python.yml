@@ -67,7 +67,7 @@ jobs:
         run: |
           pip install wheel requests
           cd .\incubator-mxnet
-          python .\ci\build_windows.py -f WIN_GPU -vcvars "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          python .\ci\build_windows.py -f WIN_GPU --vcvars "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
 
       #- name: Archive production artifacts wheel
       #  uses: actions/upload-artifact@v3
