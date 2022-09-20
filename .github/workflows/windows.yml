@@ -8,7 +8,7 @@ jobs:
         include:
           - os: windows-2019
             cuda: "11.3.1"
-            compiler: "Visual Studio 16 2019"
+            compiler: "Ninja"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -33,6 +33,8 @@ jobs:
           echo "OPENCV_DIR=c:\tools\opencv\build" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "c:\tools\opencv\build\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "c:\tools\opencv\build\x64\vc15\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "c:\tools\ninja" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+  
 
       - name: install OpenBlas
         shell: pwsh
@@ -64,7 +66,7 @@ jobs:
         run: |
           mkdir -p .\incubator-mxnet\build
           cd .\incubator-mxnet\build
-          cmake -G "${{ matrix.compiler }}" -DCMAKE_BUILD_TYPE:STRING=Release -DCUDAToolkit_ROOT:PATH="$env:CUDA_PATH" -DMXNET_CUDA_ARCH:STRING="8.6" -A x64 ..
+          cmake -G "${{ matrix.compiler }}" -DCMAKE_BUILD_TYPE:STRING=Release -DCUDAToolkit_ROOT:PATH="$env:CUDA_PATH" -DMXNET_CUDA_ARCH:STRING="8.6" ..
 
       - name: CMake Configure Error Processing
         if: ${{ (failure() && steps.configure.outcome == 'failure') || success() }}
