@@ -15,9 +15,9 @@ jobs:
         with:
           submodules: recursive
 
-      - name: get latest CMake and ninja
-        # Using 'latest' branch, the most recent CMake and ninja are installed.
-        uses: lukka/get-cmake@latest
+      #- name: get latest CMake and ninja
+      #  # Using 'latest' branch, the most recent CMake and ninja are installed.
+      #  uses: lukka/get-cmake@latest
 
       - uses: Jimver/cuda-toolkit@v0.2.8
         id: cuda-toolkit
@@ -60,7 +60,7 @@ jobs:
           Write-Output "CUDA PATH: $($env:CUDA_PATH)"
           Write-Output "Path: $($env:Path)"
           Write-Output "OpenCV: $($env:OPENCV_DIR)"
-          Write-Output "OpenBLAS: $($env:OpenBLAS)"
+          Write-Output "OpenBLAS: $($env:OpenBLAS_HOME)"
 
       - name: Configure by CMake
         id: configure
@@ -69,8 +69,6 @@ jobs:
           mkdir -p .\incubator-mxnet\build
           cd .\incubator-mxnet\build
           cmake -G "${{ matrix.compiler }}" `
-                -DCMAKE_CXX_COMPILER=cl `
-                -DCMAKE_C_COMPILER=cl `
                 -DUSE_BLAS=open `
                 -DUSE_MKL_IF_AVAILABLE=OFF `
                 -DUSE_CUDA=ON `
