@@ -55,7 +55,7 @@ jobs:
         shell: pwsh
         run: |
           Copy-Item -Path "$($Env:ProgramFiles)\NVIDIA GPU Computing Toolkit\CUDA\v11.3\extras\visual_studio_integration\MSBuildExtensions\*" `
-                    -Destination "$(${Env:ProgramFiles(x86)})\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VC\v160\BuildCustomizations"
+                    -Destination "$(${Env:ProgramFiles(x86)})\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VC\v170\BuildCustomizations"
           Write-Output "---- NVCC Output ----"
           nvcc -V
           Write-Output "---------------------"
