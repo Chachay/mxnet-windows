@@ -11,12 +11,9 @@ jobs:
             compiler: "Visual Studio 17 2022"
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: install OpenCV
+      - name: check env
         shell: pwsh
         run: |
           dir Env:
           choco install tree
-          tree "$(${Env:ProgramFiles(x86)})\Microsoft Visual Studio\2022\Enterprise\"
+          tree "$(${Env:ProgramFiles(x86)})\Microsoft Visual Studio\"
