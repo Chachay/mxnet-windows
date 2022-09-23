@@ -1,0 +1,109 @@
+name: Windows Build
+on: [workflow_dispatch]
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2019
+            cuda: "11.3.1"
+            compiler: "Visual Studio 16 2019"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: get latest CMake and ninja
+        # Using 'latest' branch, the most recent CMake and ninja are installed.
+        uses: lukka/get-cmake@latest
+
+      - uses: Jimver/cuda-toolkit@v0.2.8
+        id: cuda-toolkit
+        with:
+          method: 'network'
+          cuda: '11.3.1'
+          sub-packages: '["nvcc", "cupti", "visual_profiler", "nvprof", "cublas", "cublas_dev", "nvjpeg", "nvjpeg_dev", "npp", "npp_dev", "cufft", "cufft_dev", "nvrtc", "nvrtc_dev", "curand", "curand_dev", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "nvml_dev", "cudart", "visual_studio_integration", "thrust"]'
+
+      - name: install cudnn
+        shell: pwsh
+        run: .\scripts\install_cuda.ps1
+
+      - name: install OpenCV
+        shell: pwsh
+        run: |
+          choco install opencv
+          echo "OPENCV_DIR=c:\tools\opencv\build" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "c:\tools\opencv\build\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "c:\tools\opencv\build\x64\vc15\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: install OpenBlas
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://github.com/xianyi/OpenBLAS/releases/download/v0.3.21/OpenBLAS-0.3.21-x64.zip -OutFile OpenBLAS.zip | Out-Null
+          Expand-Archive -Path OpenBLAS.zip -DestinationPath "d:\utils\OpenBLAS"
+          echo "OpenBLAS_HOME=d:\utils\OpenBLAS" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      #- name: install MKL
+      #  shell: pwsh
+      #  run: |
+      #    Invoke-WebRequest https://registrationcenter-download.intel.com/akdlm/irc_nas/18723/w_onemkl_p_2022.1.0.192_offline.exe -OutFile setup.exe | Out-Null
+      #    Start-Process -Wait -FilePath .\setup.exe -ArgumentList "-s -a --silent --eula accept"
+
+      - name: check Env
+        shell: pwsh
+        run: |
+          Copy-Item -Path "$($Env:ProgramFiles)\NVIDIA GPU Computing Toolkit\CUDA\v11.3\extras\visual_studio_integration\MSBuildExtensions\*" `
+                    -Destination "$(${Env:ProgramFiles(x86)})\Microsoft Visual Studio\2019\Enterprise\MSBuild\Microsoft\VC\v160\BuildCustomizations"
+          Write-Output "---- NVCC Output ----"
+          nvcc -V
+          Write-Output "---------------------"
+          Write-Output "CUDA PATH: $($env:CUDA_PATH)"
+          Write-Output "Path: $($env:Path)"
+          Write-Output "OpenCV: $($env:OPENCV_DIR)"
+          Write-Output "OpenBLAS: $($env:OpenBLAS_HOME)"
+
+      - name: Configure and Build
+        id: configure
+        shell: pwsh
+        run: cmd /K ".\scripts\windows_build.cmd"
+
+      - name: CMake Configure Error Processing
+        if: ${{ (failure() && steps.configure.outcome == 'failure') || success() }}
+        working-directory: ${{ env.build_dir }}
+        shell: pwsh
+        run: |
+          pwd
+          cd .\incubator-mxnet
+          echo "---- CMakeFiles/CMakeOutput.log"
+          cat .\build\CMakeFiles\CMakeOutput.log
+          echo "----"
+          echo "---- CMakeFiles/CMakeError.log"
+          cat .\build\CMakeFiles\CMakeError.log
+          echo "----"
+
+      - name: Archive Archfacts
+        shell: pwsh
+        run:
+          Compress-Archive -Path ".\incubator-mxnet\build\*" -DestinationPath libraries.zip
+
+      - name: Archive production artifacts build
+        uses: actions/upload-artifact@v3
+        with:
+          name: mxnet-libraries
+          path: |
+            .\libraries.zip
+
+      - name: Python wheel build
+        shell: pwsh
+        run: |
+          pip install wheel
+          cd .\incubator-mxnet
+          python .\python\setup.py bdist_wheel --plat-name win_amd64
+
+      - name: Archive production artifacts build
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheel
+          path: .\incubator-mxnet\dist
