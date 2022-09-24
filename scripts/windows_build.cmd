@@ -22,3 +22,6 @@ cmake -GNinja ^
       "%~dp0..\incubator-mxnet"
 REM   -A "x64" .
 cmake --build "%~dp0..\incubator-mxnet\build"
+if %ERRORLEVEL% NEQ 0 (
+      cmake --build "%~dp0..\incubator-mxnet\build" -j1
+)
