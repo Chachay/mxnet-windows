@@ -51,6 +51,13 @@ jobs:
       #    Invoke-WebRequest https://registrationcenter-download.intel.com/akdlm/irc_nas/18723/w_onemkl_p_2022.1.0.192_offline.exe -OutFile setup.exe | Out-Null
       #    Start-Process -Wait -FilePath .\setup.exe -ArgumentList "-s -a --silent --eula accept"
 
+      - name: configure Pagefile
+        uses: al-cheb/configure-pagefile-action@v1.2
+        with:
+          minimum-size: 8GB
+          maximum-size: 16GB
+          disk-root: "C:"
+
       - name: check Env
         shell: pwsh
         run: |
